@@ -178,7 +178,7 @@ class UserActions:
             ix, iy = int(event.xdata), int(event.ydata)
             # print('x = %d, y = %d' % (ix, iy))
 
-            food_pot[iy, ix] = np.random.normal(genes["a nutrients"], genes["sd nutrients"])
+            food_pot[iy, ix] = np.random.normal(genes["mean nutrients"], genes["sd nutrients"])
 
         elif str(event.button) == "MouseButton.RIGHT":
             mouse_side = "Right"
@@ -289,7 +289,8 @@ class UserActions:
             # if we did not just start the program, hence ix and iy would be -1 if we did
             # then add the food_pot to the new grid
             if not mass_food and not bomb_set and not mass_sheep_placement and not mass_wolfe_placement:
-                new_grid[(iy, ix)] = FOOD_ON
+                generate.generate_resource(iy, ix, world_resources)
+                # new_grid[(iy, ix)] = FOOD_ON
 
             ix, iy = -1, -1
 
@@ -359,7 +360,6 @@ class Generate:
         characteristics["fitness"] = np.random.normal(mean_fitness, sd_fitness)
         # add energy
         characteristics["energy"] = np.random.normal(mean_energy, sd_energy)
-        print(species, characteristics["fitness"], characteristics["energy"])
         # add energy
         characteristics["speed"] = speed
         # add reproduction probability for number of kids creature has
