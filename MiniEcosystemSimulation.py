@@ -15,8 +15,8 @@ These are like nobs that you can turn and tweak to effect how the simulation run
 """
 
 # World Parameters
-x = 98
-y = 98
+x = 200
+y = 200
 initial_world_resources = "1,000,000"
 initial_resources_generated = .8
 # Population Parameters
@@ -24,6 +24,7 @@ sheep_p = 0.01
 wolfe_p = 0.01
 fitness_depletion = 0.02
 movement_energy_perc_loss = 0.001
+mutation_amount = 1
 threshold_energy = 1
 threshold_fitness = 1
 sd_multiplier = 15 / 100
@@ -62,7 +63,7 @@ predator_list = ["Wolfe"]
 energy_used_attacking = .05  # 0.3
 fitness_used_attacking = .001  # 0.3
 # Prey Parameters
-prey_list = ["Sheep", "Wolfe"]
+prey_list = ["Sheep"]
 herbivore_list = ["Sheep"]
 energy_defending = 0.5
 fitness_defending = 0.5
@@ -81,8 +82,8 @@ creature_placement_deviation = 15
 mass_min_food_nutrients = 100
 mass_max_food_nutrients = 200
 # Color Parameters
-DRAKONIAN_ON = 20
-GRITIS_ON = 255
+WOLFE_ON = 20
+SHEEP_ON = 255
 GRASS_ON = 120
 SHRUB_ON = 100
 FIGHT_ON = 20
@@ -100,7 +101,7 @@ world_resources = initial_world_resources
 population = dict()
 food_pot = dict()
 p_off = 1 - wolfe_p - sheep_p
-vals = [DRAKONIAN_ON, GRITIS_ON, OFF]
+vals = [WOLFE_ON, SHEEP_ON, OFF]
 animal_list = ["Sheep", "Wolfe"]
 plant_list = ["grass", "shrub"]
 species_genes_dict = {
@@ -113,7 +114,7 @@ species_genes_dict = {
         "shrub": shrub_genes_dict
         }
 }
-animal_color_dict = {"Sheep": GRITIS_ON, "Wolfe": DRAKONIAN_ON}
+animal_color_dict = {"Sheep": SHEEP_ON, "Wolfe": WOLFE_ON}
 plant_color_dict = {"grass": GRASS_ON, "shrub": SHRUB_ON}
 color_species_dict = {value: key for key, value in animal_color_dict.items()}
 color_plant_dict = {value: key for key, value in plant_color_dict.items()}
@@ -127,11 +128,13 @@ wolfe_pop_size = 0
 max_darkonian_age = 0
 avg_wolfe_fitness = 0
 avg_wolfe_energy = 0
+avg_wolfe_speed = 0
 # Sheep Setters
 sheep_pop_size = 0
 max_sheep_age = 0
 avg_sheep_fitness = 0
 avg_sheep_energy = 0
+avg_sheep_speed = 0
 # Day Setters
 year = 0
 day = 0
@@ -154,8 +157,8 @@ indiv_age = 0
 
 
 # Extra
-# DRAKONIAN_ON = 60
-# GRITIS_ON = 255
+# WOLFE_ON = 60
+# SHEEP_ON = 255
 # FOOD_ON = 200
 # Number of Threads
 # processes_count = 2
@@ -177,8 +180,10 @@ class UserActions:
 
             ix, iy = int(event.xdata), int(event.ydata)
             # print('x = %d, y = %d' % (ix, iy))
-
-            food_pot[iy, ix] = np.random.normal(genes["mean nutrients"], genes["sd nutrients"])
+            plant = dict()
+            plant["species"] = species
+            plant["nutrients"] = np.random.normal(genes["mean nutrients"], genes["sd nutrients"])
+            food_pot[iy, ix] = plant
 
         elif str(event.button) == "MouseButton.RIGHT":
             mouse_side = "Right"
@@ -548,6 +553,14 @@ class CreatureActions:
                     child["species"] = max(set(parents_species), key=parents_species.count)
                     child["fitness"] = fitness_given
                     child["energy"] = energy_given
+                    # get the speed of any one of the parents, maybe better would be to combine all the fitnesses, take
+                    # the average and the round that
+                    selected_parent_speed = random.choice(parents)["speed"]
+                    if selected_parent_speed > mutation_amount:
+                        child_speed = selected_parent_speed + random.randint(-mutation_amount, mutation_amount)
+                    else:
+                        child_speed = selected_parent_speed + random.randint(0, mutation_amount)
+                    child["speed"] = child_speed
                     child["age"] = 0
 
                     # remove fitness from parent1 and parent2 even if child does not make it
@@ -615,12 +628,8 @@ class CreatureActions:
             original_creature = population[id]
             genes = species_genes_dict["Animal"][original_creature["species"]]
 
-            # since we start with an even time and end with an even time, and since the time loops, we may run into a
-            # a problem here, so fix this bug
-
-            # nevertheless, we are checking if the hour is even, if so every creature gets to move, if not
-            # then check if the creature is wolfe, if they are then they always get to move, regardless of the time
-            # aka, they wolfes move every hour, while the rest move every other hour
+            # if the speed for the creature, like 2, modulus equals 0 then move them. So then creatures with speed 5
+            # move every 5 hours, speed 2 move every 2 hours etc. Its individualized
             if hour % genes["speed"] == 0:
                 # Subtract the energy loss from movement once the creature moves. If they are Wolfe, this happen more
                 # often, but they also get to move more often
@@ -782,6 +791,8 @@ class Utils:
         global avg_sheep_fitness
         global avg_wolfe_energy
         global avg_sheep_energy
+        global avg_wolfe_speed
+        global avg_sheep_speed
 
         # copy keys and get stats
         keys = []
@@ -791,6 +802,8 @@ class Utils:
         total_sheep_fitness = 0
         total_wolfe_energy = 0
         total_sheep_energy = 0
+        total_wolfe_speed = 0
+        total_sheep_speed = 0
         for key in population:
             creature = population[key]
 
@@ -801,11 +814,13 @@ class Utils:
                 wolfe_pop_size += 1
                 total_wolfe_fitness += creature["fitness"]
                 total_wolfe_energy += creature["energy"]
+                total_wolfe_speed += creature["speed"]
 
             if creature["species"] == "Sheep":
                 sheep_pop_size += 1
                 total_sheep_fitness += creature["fitness"]
                 total_sheep_energy += creature["energy"]
+                total_sheep_speed += creature["speed"]
 
             # if creature["energy"] > max_energy:
             #     max_energy = creature["energy"]
@@ -815,19 +830,23 @@ class Utils:
             keys.append(key)
 
         # take averages because we do not need a lot of precision
-        if wolfe_pop_size != 0:
+        if wolfe_pop_size > 0:
             avg_wolfe_fitness = round(total_wolfe_fitness / wolfe_pop_size, 3)
             avg_wolfe_energy = round(total_wolfe_energy / wolfe_pop_size, 3)
+            avg_wolfe_speed = round(total_wolfe_speed / wolfe_pop_size, 3)
         else:
             avg_wolfe_fitness = 0
             avg_wolfe_energy = 0
+            avg_wolfe_speed = 0
 
-        if sheep_pop_size != 0:
+        if sheep_pop_size > 0:
             avg_sheep_fitness = round(total_sheep_fitness / sheep_pop_size, 3)
             avg_sheep_energy = round(total_sheep_energy / sheep_pop_size, 3)
+            avg_sheep_speed = round(total_sheep_speed / sheep_pop_size, 3)
         else:
             avg_sheep_fitness = 0
             avg_sheep_energy = 0
+            avg_sheep_speed = 0
 
         return keys
 
@@ -839,12 +858,12 @@ class Utils:
         death_count += diff if diff > 0 else 0
 
         plt.title(
-            f"Y:D:H: {year}:{day}:{hour} - Alive: {wolfe_pop_size + sheep_pop_size:,} - Death Count: {death_count:,}",
+            f"Y:D:H: {year}:{day}:{hour} - World Resources: {world_resources:,} - Alive: {wolfe_pop_size + sheep_pop_size:,} - Death Count: {death_count:,}",
             fontsize=14)
-        plt.suptitle(f"World Resources: {world_resources:,}"
-                     f"\nN: D:{wolfe_pop_size:,} G: {sheep_pop_size:,}"
-                     f"\nAvg D-F: {avg_wolfe_fitness:,.1f} G-F: {avg_sheep_fitness:,.1f}"
-                     f"\nAvg: D-E: {avg_wolfe_energy:,.1f} G-E: {avg_sheep_energy:,.1f}", fontsize=11)
+        plt.suptitle(f"\n{wolfe_pop_size:,} Wolves     {sheep_pop_size:,} Sheep"
+                     f"\nFitness: {avg_wolfe_fitness:,.1f}   {avg_sheep_fitness:,.1f}"
+                     f"\nEnergy: {avg_wolfe_energy:,.1f}   {avg_sheep_energy:,.1f}"
+                     f"\nSpeed: {avg_wolfe_speed:,.1f}   {avg_sheep_speed:,.1f}", fontsize=11)
 
         # print(random.choice(list(population.items())))
 
