@@ -15,23 +15,29 @@ These are like nobs that you can turn and tweak to effect how the simulation run
 """
 
 # World Parameters
-x = 200
-y = 200
-initial_world_resources = "1,000,000"
-initial_resources_generated = .8
+world_parameters = {
+    "x" : 10,
+    "y" : 10,
+    "initial_world_resources" : "1,000,000",
+    "initial_resources_generated" : .8
+}
 # Population Parameters
-sheep_p = 0.01
-wolfe_p = 0.01
-fitness_depletion = 0.02
-movement_energy_perc_loss = 0.001
-mutation_amount = 1
-threshold_energy = 1
-threshold_fitness = 1
-sd_multiplier = 15 / 100
+population_parameters = {
+    "sheep_p" : 0.01,
+    "wolfe_p" : 0.01,
+    "grass_p" : 0.05,
+    "shrub_p" : 0.01,
+    "fitness_depletion" : 0.02,
+    "movement_energy_perc_loss" : 0.001,
+    "mutation_amount" : 1,
+    "threshold_energy" : 1,
+    "threshold_fitness" : 1,
+    "sd_multiplier" : 15 / 100
+}
 # Wolfe Parameters
 wolfe_genes_dict = {
     "mean fitness": 100,
-    "sd fitness"  : 100 * sd_multiplier,
+    "sd fitness"  : 100 * population_parameters["sd_multiplier"],
     "mean energy" : 100,
     "sd energy"   : 15,
     "speed"       : 1
@@ -39,7 +45,7 @@ wolfe_genes_dict = {
 # Sheep Parameters
 sheep_genes_dict = {
     "mean fitness": 75,
-    "sd fitness"  : 75 * sd_multiplier,
+    "sd fitness"  : 75 * population_parameters["sd_multiplier"],
     "mean energy" : 50,
     "sd energy"   : 7.5,
     "speed"       : 1
@@ -47,47 +53,71 @@ sheep_genes_dict = {
 # Grass Parameters
 grass_genes_dict = {
     "mean nutrients": 3,
-    "sd nutrients"  : 3 * sd_multiplier
+    "sd nutrients"  : 3 * population_parameters["sd_multiplier"],
+    "mean fitness": 100,
+    "sd fitness"  : 100 * population_parameters["sd_multiplier"],
+    "mean energy" : 100,
+    "sd energy"   : 15,
+    "speed"       : 0
 }
 # Shrub Parameters
 shrub_genes_dict = {
     "mean nutrients": 7,
-    "sd nutrients"  : 7 * sd_multiplier
+    "sd nutrients"  : 7 * population_parameters["sd_multiplier"],
+    "mean fitness": 100,
+    "sd fitness"  : 100 * population_parameters["sd_multiplier"],
+    "mean energy" : 100,
+    "sd energy"   : 15,
+    "speed"       : 0
 }
 # Children Parameters
-required_parents_num = 2
-energy_perc_for_child = 0.2
-perc_of_characteristics_given = 0.6
+children_parameters = {
+    "required_parents_num" : 2,
+    "energy_perc_for_child" : 0.2,
+    "perc_of_characteristics_given" : 0.6
+}
 # Predator Parameters
-predator_list = ["Wolfe"]
-energy_used_attacking = .05  # 0.3
-fitness_used_attacking = .001  # 0.3
+predator_parameters = {
+    "predator_list" : ["Wolfe"],
+    "energy_used_attacking" : .05,  # 0.3
+    "fitness_used_attacking" : .001  # 0.3
+    }
 # Prey Parameters
-prey_list = ["Sheep"]
-herbivore_list = ["Sheep"]
-energy_defending = 0.5
-fitness_defending = 0.5
+prey_parameters = {
+    "prey_list" : ["Sheep"],
+    "herbivore_list" : ["Sheep"],
+    "energy_defending" : 0.5,
+    "fitness_defending" : 0.5
+    }
 # Food Parameters
-prob_rand_food_gen = 0.001
-rand_min_food_nutrients = 2
-rand_max_food_nutrients = 5
-hunt_eat_keep = 0.7
-veg_eat_keep = 0.01
+food_parameters = {
+    "prob_rand_food_gen" : 0.001,
+    "rand_min_food_nutrients" : 2,
+    "rand_max_food_nutrients" : 5,
+    "hunt_eat_keep" : 0.7,
+    "veg_eat_keep" : 0.01
+    }
 # Time Parameters
-hours_per_day = 24
-days_per_year = 356
+time_parameters = {
+    "hours_per_day" : 24,
+    "days_per_year" : 356
+    }
 # Mass Placement Parameters
-mass_placement_size = 15
-creature_placement_deviation = 15
-mass_min_food_nutrients = 100
-mass_max_food_nutrients = 200
+mass_placement_parameters = {
+    "mass_placement_size" : 15,
+    "creature_placement_deviation" : 15,
+    "mass_min_food_nutrients" : 100,
+    "mass_max_food_nutrients" : 200
+    }
 # Color Parameters
-WOLFE_ON = 20
-SHEEP_ON = 255
-GRASS_ON = 120
-SHRUB_ON = 100
-FIGHT_ON = 20
-OFF = 200
+color_parameters = {
+    "WOLFE_ON" : 20,
+    "SHEEP_ON": 255,
+    "GRASS_ON" : 120,
+    "SHRUB_ON" : 100,
+    "FIGHT_ON" : 20,
+    "OFF" : 200
+}
 
 """
 Setters
@@ -96,30 +126,32 @@ These are the initializer variables
 """
 
 # General World Setters
-initial_world_resources = int(initial_world_resources.replace(",", ""))
-world_resources = initial_world_resources
+world_parameters["initial_world_resources"] = int(world_parameters["initial_world_resources"].replace(",", ""))
+world_resources = world_parameters["initial_world_resources"]
 population = dict()
 food_pot = dict()
-p_off = 1 - wolfe_p - sheep_p
-vals = [WOLFE_ON, SHEEP_ON, OFF]
+p_off = 1 - population_parameters["wolfe_p"] - population_parameters["sheep_p"] - population_parameters["grass_p"] -population_parameters["shrub_p"]
+vals = [color_parameters["WOLFE_ON"], 
+color_parameters["SHEEP_ON"], 
+  color_parameters["GRASS_ON"], 
+  color_parameters["SHRUB_ON"],
+  color_parameters["OFF"]]
 animal_list = ["Sheep", "Wolfe"]
 plant_list = ["grass", "shrub"]
 species_genes_dict = {
-    "Animal": {
-        "Sheep"   : sheep_genes_dict,
-        "Wolfe": wolfe_genes_dict
-        },
-    "Plant" : {
-        "grass": grass_genes_dict,
-        "shrub": shrub_genes_dict
-        }
+"Sheep" : sheep_genes_dict,
+"Wolfe": wolfe_genes_dict,
+"grass": grass_genes_dict,
+"shrub": shrub_genes_dict
 }
-animal_color_dict = {"Sheep": SHEEP_ON, "Wolfe": WOLFE_ON}
-plant_color_dict = {"grass": GRASS_ON, "shrub": SHRUB_ON}
-color_species_dict = {value: key for key, value in animal_color_dict.items()}
+animal_color_dict = {"Sheep": color_parameters["SHEEP_ON"], "Wolfe": color_parameters["WOLFE_ON"]}
+plant_color_dict = {"grass": color_parameters["GRASS_ON"], "shrub": color_parameters["SHRUB_ON"]}
+species_color_dict = {"Sheep": color_parameters["SHEEP_ON"], "Wolfe": color_parameters["WOLFE_ON"],
+"grass": color_parameters["GRASS_ON"], "shrub": color_parameters["SHRUB_ON"]}
+color_species_dict = {value: key for key, value in species_color_dict.items()}
 color_plant_dict = {value: key for key, value in plant_color_dict.items()}
 new_grid = np.array([])
-required_parents_num -= 1
+children_parameters["required_parents_num"] -= 1
 max_energy = 0
 max_age = 0
 death_count = 0
@@ -157,8 +189,8 @@ indiv_age = 0
 
 
 # Extra
-# WOLFE_ON = 60
-# SHEEP_ON = 255
+# color_parameters["WOLFE_ON"] = 60
+# color_parameters["SHEEP_ON"] = 255
 # FOOD_ON = 200
 # Number of Threads
 # processes_count = 2
@@ -246,37 +278,37 @@ class UserActions:
 
             for pos in range(0, len(keys), 2):
                 del population[keys[pos]]
-                new_grid[keys[pos]] = OFF
+                new_grid[keys[pos]] = color_parameters["OFF"]
 
             thanos_on = False
 
         if mouse_side == "Left":
             if bomb_set:
-                for row in range(-mass_placement_size, mass_placement_size):
-                    for col in range(-mass_placement_size, mass_placement_size):
+                for row in range(-mass_placement_parameters["mass_placement_size"], mass_placement_parameters["mass_placement_size"]):
+                    for col in range(-mass_placement_parameters["mass_placement_size"], mass_placement_parameters["mass_placement_size"]):
                         pos = (iy + col, ix + row)
                         if pos in population:
                             del population[pos]
-                            new_grid[pos] = OFF
+                            new_grid[pos] = color_parameters["OFF"]
                         if pos in food_pot:
                             del food_pot[pos]
-                            new_grid[pos] = OFF
+                            new_grid[pos] = color_parameters["OFF"]
 
             if mass_food:
-                for row in range(-mass_placement_size, mass_placement_size + 1):
-                    for col in range(-mass_placement_size, mass_placement_size + 1):
-                        generate.generate_resource((iy + col) % x, (ix + row) % y, world_resources)
+                for row in range(-mass_placement_parameters["mass_placement_size"], mass_placement_parameters["mass_placement_size"] + 1):
+                    for col in range(-mass_placement_parameters["mass_placement_size"], mass_placement_parameters["mass_placement_size"] + 1):
+                        generate.generate_resource((iy + col) % world_parameters["x"], (ix + row) %world_parameters["y"], world_resources)
 
             if mass_wolfe_placement or mass_sheep_placement:
-                for row in range(-mass_placement_size, mass_placement_size + 1):
-                    for col in range(-mass_placement_size, mass_placement_size + 1):
+                for row in range(-mass_placement_parameters["mass_placement_size"], mass_placement_parameters["mass_placement_size"] + 1):
+                    for col in range(-mass_placement_parameters["mass_placement_size"], mass_placement_parameters["mass_placement_size"] + 1):
                         # Get the species the user wants to place
                         species = "Wolfe"
                         if mass_wolfe_placement:
                             species = "Wolfe"
                         elif mass_sheep_placement:
                             species = "Sheep"
-                        pos = ((iy + col) % x, (ix + row) % y)
+                        pos = ((iy + col) % world_parameters["x"], (ix + row) % world_parameters["y"])
 
                         if pos not in population:
                             genes = species_genes_dict["Animal"][species]
@@ -324,13 +356,13 @@ class Generate:
 
     def generate_population(self):
         random_grid = np.random.choice(
-            vals, x * y, p=[wolfe_p, sheep_p, p_off]).reshape(x, y)
-        for i in range(y):
-            for j in range(x):
+            vals, world_parameters["x"] * world_parameters["y"], p=[population_parameters["wolfe_p"], population_parameters["sheep_p"], population_parameters["grass_p"], population_parameters["shrub_p"], p_off]).reshape(world_parameters["x"], world_parameters["y"])
+        for i in range(world_parameters["y"]):
+            for j in range(world_parameters["x"]):
                 key = (j, i)
                 if random_grid[key] in color_species_dict:
                     species = color_species_dict[random_grid[key]]
-                    genes = species_genes_dict["Animal"][species]
+                    genes = species_genes_dict[species]
                     self.generate_creature(
                         species,
                         key,
@@ -343,11 +375,11 @@ class Generate:
         return random_grid
 
     def generate_terrain(self, random_grid, world_resources):
-        for i in range(y):
-            for j in range(x):
-                if random.random() <= initial_resources_generated and (j, i) not in population:
-                    plant_type = random.choice(plant_list)
-                    genes = species_genes_dict["Plant"][plant_type]
+        for i in range(world_parameters["y"]):
+            for j in range(world_parameters["x"]):
+                if random.random() <= world_parameters["initial_resources_generated"] and (j, i) not in population:
+                    plant_type = random.choice(["grass","shrub"])
+                    genes = species_genes_dict[plant_type]
                     plant = dict()
                     plant["species"] = plant_type
                     plant["nutrients"] = np.random.normal(genes["mean nutrients"], genes["sd nutrients"])
@@ -374,8 +406,8 @@ class Generate:
 
     @staticmethod
     def generate_resource(j, i, world_resources):
-        plant_type = random.choice(plant_list)
-        genes = species_genes_dict["Plant"][plant_type]
+        plant_type = random.choice(["grass","shrub"])
+        genes = species_genes_dict[plant_type]
         plant = dict()
         plant["species"] = plant_type
         plant["nutrients"] = np.random.normal(genes["mean nutrients"], genes["sd nutrients"])
@@ -386,13 +418,13 @@ class Generate:
         return world_resources
 
     def rand_generate_food(self, world_resources, grid):
-        for j in range(x):
-            for j in range(y):
+        for j in range(world_parameters["x"]):
+            for j in range(world_parameters["y"]):
                 if world_resources > 0:
-                    i = random.randint(0, y - 1)
-                    j = random.randint(0, x - 1)
-                    if grid[j, i] == OFF:
-                        if random.random() <= prob_rand_food_gen:
+                    i = random.randint(0, world_parameters["y"] - 1)
+                    j = random.randint(0, world_parameters["x"] - 1)
+                    if grid[j, i] == color_parameters["OFF"]:
+                        if random.random() <= food_parameters["prob_rand_food_gen"]:
                             world_resources = self.generate_resource(j, i, world_resources)
                 else:
                     break
@@ -420,11 +452,11 @@ class CreatureActions:
         if sheep_pop_size + wolfe_pop_size < amount_of_food:
             # check all of the creatures to see if they reached food
             for food_loc in keys:
-                can_eat_veg = population[food_loc]["species"] in herbivore_list if food_loc in population else False
+                can_eat_veg = population[food_loc]["species"] in prey_parameters["herbivore_list"] if food_loc in population else False
                 if can_eat_veg:
                     creature = population[food_loc]
-                    creature["fitness"] += food_pot[food_loc]["nutrients"] * veg_eat_keep
-                    creature["energy"] += food_pot[food_loc]["nutrients"] * veg_eat_keep
+                    creature["fitness"] += food_pot[food_loc]["nutrients"] * food_parameters["veg_eat_keep"]
+                    creature["energy"] += food_pot[food_loc]["nutrients"] * food_parameters["veg_eat_keep"]
                     del food_pot[food_loc]
                     # since the creature is at the food location, simply turn it from food on to just on for the
                     # creature to now be displayed instead of the food
@@ -434,11 +466,11 @@ class CreatureActions:
             # check all of the creatures to see if they reached food
             for creature_loc in population:
                 can_eat_veg = population[creature_loc][
-                                  "species"] in herbivore_list if creature_loc in population else False
+                                  "species"] in prey_parameters["herbivore_list"] if creature_loc in population else False
                 if can_eat_veg and creature_loc in food_pot:
                     creature = population[creature_loc]
-                    creature["fitness"] += food_pot[creature_loc]["nutrients"] * veg_eat_keep
-                    creature["energy"] += food_pot[creature_loc]["nutrients"] * veg_eat_keep
+                    creature["fitness"] += food_pot[creature_loc]["nutrients"] * food_parameters["veg_eat_keep"]
+                    creature["energy"] += food_pot[creature_loc]["nutrients"] * food_parameters["veg_eat_keep"]
                     del food_pot[creature_loc]
                     # since the creature is at the food location, simply turn it from food on to just on for the
                     # creature to now be displayed instead of the food
@@ -459,8 +491,9 @@ class CreatureActions:
             #     creature["age"] = creature["age"] + 1
             #     # print("ran", key, original_creature["age"])
 
-            # this grabs the color for the species that the creature is
-            ON = animal_color_dict[creature["species"]]
+            # this grabs the species that the creature is
+            ON = species_color_dict[creature["species"]]
+            species = creature["species"]
 
             # try:
             #     if grid[key] == ON:
@@ -481,58 +514,58 @@ class CreatureActions:
                 # so that the simulation takes place on a toroidal surface.
                 possible_parents = []
                 total = 0
-                if grid[j, (i - 1) % y] == ON:
-                    possible_parents.append((j, (i - 1) % y))
+                if grid[j, (i - 1) % world_parameters["y"]] == species:
+                    possible_parents.append((j, (i - 1) % world_parameters["y"]))
                     total += 1
-                if grid[j, (i + 1) % y] == ON:
-                    possible_parents.append((j, (i + 1) % y))
+                if grid[j, (i + 1) % world_parameters["y"]] == species:
+                    possible_parents.append((j, (i + 1) % world_parameters["y"]))
                     total += 1
-                if grid[(j - 1) % x, i] == ON:
-                    possible_parents.append(((j - 1) % x, i))
+                if grid[(j - 1) % world_parameters["x"], i] == species:
+                    possible_parents.append(((j - 1) % world_parameters["x"], i))
                     total += 1
-                if grid[(j + 1) % x, i] == ON:
-                    possible_parents.append(((j + 1) % x, i))
+                if grid[(j + 1) % world_parameters["x"], i] == species:
+                    possible_parents.append(((j + 1) % world_parameters["x"], i))
                     total += 1
-                if grid[(j - 1) % x, (i - 1) % y] == ON:
-                    possible_parents.append(((j - 1) % x, (i - 1) % y))
+                if grid[(j - 1) % world_parameters["x"], (i - 1) % world_parameters["y"]] == species:
+                    possible_parents.append(((j - 1) % world_parameters["x"], (i - 1) % world_parameters["y"]))
                     total += 1
-                if grid[(j - 1) % x, (i + 1) % y] == ON:
-                    possible_parents.append(((j - 1) % x, (i + 1) % y))
+                if grid[(j - 1) % world_parameters["x"], (i + 1) % world_parameters["y"]] == species:
+                    possible_parents.append(((j - 1) % world_parameters["x"], (i + 1) % world_parameters["y"]))
                     total += 1
-                if grid[(j + 1) % x, (i - 1) % y] == ON:
-                    possible_parents.append(((j + 1) % x, (i - 1) % y))
+                if grid[(j + 1) % world_parameters["x"], (i - 1) % world_parameters["y"]] == species:
+                    possible_parents.append(((j + 1) % world_parameters["x"], (i - 1) % world_parameters["y"]))
                     total += 1
-                if grid[(j + 1) % x, (i + 1) % y] == ON:
-                    possible_parents.append(((j + 1) % x, (i + 1) % y))
+                if grid[(j + 1) % world_parameters["x"], (i + 1) % world_parameters["y"]] == species:
+                    possible_parents.append(((j + 1) % world_parameters["x"], (i + 1) % world_parameters["y"]))
                     total += 1
 
                 # create new creatures randomly next to the parent1 if there is the needed number of parent1s and
                 # the energy is higher proportionally compared to the fitness of the creature at j, i
                 # if the world is filling up to fast change the total == to a higher number so there must be a greater
                 # of other creatures next to the creature for it to procreate
-                if total >= required_parents_num and creature["energy"] > creature["fitness"] * energy_perc_for_child:
+                if total >= children_parameters["required_parents_num"] and creature["energy"] > creature["fitness"] * children_parameters["energy_perc_for_child"]:
                     new_id = 0
                     r = random.randint(0, 7)
                     if r == 0:
-                        new_id = (j, (i - 1) % y)
+                        new_id = (j, (i - 1) % world_parameters["y"])
                     if r == 1:
-                        new_id = (j, (i + 1) % y)
+                        new_id = (j, (i + 1) % world_parameters["y"])
                     if r == 2:
-                        new_id = ((j - 1) % x, i)
+                        new_id = ((j - 1) % world_parameters["x"], i)
                     if r == 3:
-                        new_id = ((j + 1) % x, i)
+                        new_id = ((j + 1) % world_parameters["x"], i)
                     if r == 4:
-                        new_id = ((j - 1) % x, (i - 1) % y)
+                        new_id = ((j - 1) % world_parameters["x"], (i - 1) % world_parameters["y"])
                     if r == 5:
-                        new_id = ((j - 1) % x, (i + 1) % y)
+                        new_id = ((j - 1) % world_parameters["x"], (i + 1) % world_parameters["y"])
                     if r == 6:
-                        new_id = ((j + 1) % x, (i - 1) % y)
+                        new_id = ((j + 1) % world_parameters["x"], (i - 1) % world_parameters["y"])
                     if r == 7:
-                        new_id = ((j + 1) % x, (i + 1) % y)
+                        new_id = ((j + 1) % world_parameters["x"], (i + 1) % world_parameters["y"])
 
                     parents = list()
                     parents_keys = list()
-                    for count in range(required_parents_num):
+                    for count in range(children_parameters["required_parents_num"]):
                         # need parent index to delete creature later
                         parent_index = random.randint(0, len(possible_parents) - 1)
                         parent_key = possible_parents[parent_index]
@@ -556,17 +589,17 @@ class CreatureActions:
                     # get the speed of any one of the parents, maybe better would be to combine all the fitnesses, take
                     # the average and the round that
                     selected_parent_speed = random.choice(parents)["speed"]
-                    if selected_parent_speed > mutation_amount:
-                        child_speed = selected_parent_speed + random.randint(-mutation_amount, mutation_amount)
+                    if selected_parent_speed > population_parameters["mutation_amount"]:
+                        child_speed = selected_parent_speed + random.randint(-population_parameters["mutation_amount"], population_parameters["mutation_amount"])
                     else:
-                        child_speed = selected_parent_speed + random.randint(0, mutation_amount)
+                        child_speed = selected_parent_speed + random.randint(0, population_parameters["mutation_amount"])
                     child["speed"] = child_speed
                     child["age"] = 0
 
                     # remove fitness from parent1 and parent2 even if child does not make it
                     for parent_index in range(len(parents)):
-                        parents[parent_index]["fitness"] -= (fitness_given * perc_of_characteristics_given)
-                        parents[parent_index]["energy"] -= (energy_given * perc_of_characteristics_given)
+                        parents[parent_index]["fitness"] -= (fitness_given * children_parameters["perc_of_characteristics_given"])
+                        parents[parent_index]["energy"] -= (energy_given * children_parameters["perc_of_characteristics_given"])
 
                     for key, parent in zip(parents_keys, parents):
                         population[key] = parent
@@ -626,29 +659,37 @@ class CreatureActions:
     def move_all_creatures(ids, hour):
         for id in ids:
             original_creature = population[id]
-            genes = species_genes_dict["Animal"][original_creature["species"]]
+            genes = species_genes_dict[original_creature["species"]]
 
             # if the speed for the creature, like 2, modulus equals 0 then move them. So then creatures with speed 5
             # move every 5 hours, speed 2 move every 2 hours etc. Its individualized
-            if hour % genes["speed"] == 0:
+            if genes["speed"] == 0:
+                    continue
+            elif hour % genes["speed"] == 0:
                 # Subtract the energy loss from movement once the creature moves. If they are Wolfe, this happen more
                 # often, but they also get to move more often
                 # print(original_creature["energy"])
-                original_creature["energy"] -= original_creature["energy"] * movement_energy_perc_loss
+                original_creature["energy"] -= original_creature["energy"] * population_parameters["movement_energy_perc_loss"]
                 # print(original_creature["energy"])
                 # print()
 
                 j = id[0]
                 i = id[1]
-                possible_spots = [(j, (i - 1) % y), (j, (i + 1) % y), ((j - 1) % x, i), (
-                    (j + 1) % x, i), ((j - 1) % x, (i - 1) % y), ((j - 1) % x, (i + 1) % y),
-                                  ((j + 1) % x, (i - 1) % y), ((j + 1) % x, (i + 1) % y)]
+                possible_spots = [
+                (j, (i - 1) % world_parameters["y"]),
+                (j, (i + 1) % world_parameters["y"]),
+                ((j - 1) % world_parameters["x"], i),
+                ((j + 1) % world_parameters["x"], i),
+                ((j - 1) % world_parameters["x"], (i - 1) % world_parameters["y"]),
+                ((j - 1) % world_parameters["x"], (i + 1) % world_parameters["y"]),
+                ((j + 1) % world_parameters["x"], (i - 1) % world_parameters["y"]),
+                ((j + 1) % world_parameters["x"], (i + 1) % world_parameters["y"])]
                 new_id = random.choice(possible_spots)
 
-                is_predator = original_creature["species"] in predator_list
+                is_predator = original_creature["species"] in predator_parameters["predator_list"]
                 # check if there is even a creature in new spot, if not then set both to false
                 is_prey = population[new_id][
-                              "species"] in prey_list if new_id in population else False
+                              "species"] in prey_parameters["prey_list"] if new_id in population else False
 
                 # if eat
                 # could possibly add neural net that determines if eat eats its own kind
@@ -659,18 +700,18 @@ class CreatureActions:
                     prey = population[prey_id]
 
                     # subtract some energy from the predator as it used to attack
-                    predator["energy"] *= energy_used_attacking
-                    predator["fitness"] -= prey["fitness"] * fitness_used_attacking
+                    predator["energy"] *= predator_parameters["energy_used_attacking"]
+                    predator["fitness"] -= prey["fitness"] * predator_parameters["fitness_used_attacking"]
                     # subtract some energy from the prey for fighting back/fleeing
-                    prey["energy"] *= energy_defending
-                    prey["fitness"] -= predator["fitness"] * fitness_defending
+                    prey["energy"] *= prey_parameters["energy_defending"]
+                    prey["fitness"] -= predator["fitness"] * prey_parameters["fitness_defending"]
 
                     # First check predator state
                     # prey kills predator
                     # if dead
                     if predator["fitness"] <= 0:
                         # turn position of predator off since it died
-                        new_grid[predator_id] = OFF if id not in food_pot else animal_color_dict[population[predator_id]["species"]]
+                        new_grid[predator_id] = color_parameters["OFF"] if id not in food_pot else animal_color_dict[population[predator_id]["species"]]
                         # remove it from the population
                         del population[predator_id]
                     else:
@@ -684,14 +725,14 @@ class CreatureActions:
                     if predator_id in population and prey["fitness"] <= 0:
                         # if the challenger is fitter than the creature currently at the position
                         # then set the final alive creature to the challenger
-                        predator["fitness"] += prey["fitness"] * hunt_eat_keep
-                        predator["energy"] += predator["energy"] * hunt_eat_keep
+                        predator["fitness"] += prey["fitness"] * food_parameters["hunt_eat_keep"]
+                        predator["energy"] += predator["energy"] * food_parameters["hunt_eat_keep"]
 
                         # delete creature at old position as it has now taken the spot of the prey
                         del population[predator_id]
                         # turn off the old spot if that spot did not have food origianlly there
                         # if it did, then turn it back to that original color
-                        new_grid[predator_id] = OFF if predator_id not in food_pot else plant_color_dict[food_pot[predator_id]["species"]]
+                        new_grid[predator_id] = color_parameters["OFF"] if predator_id not in food_pot else plant_color_dict[food_pot[predator_id]["species"]]
 
                         # make the prey id that used to be there the predator
                         population[prey_id] = predator
@@ -707,7 +748,7 @@ class CreatureActions:
                     # get rid of old creature as old creature doesnt exist there anymore
                     del population[id]
                     # turn off the old spot
-                    new_grid[id] = OFF
+                    new_grid[id] = color_parameters["OFF"]
                     # move the creature to new spot
                     population[new_id] = original_creature
                     # change the color to that of the creature as the creature will walk over the new spot
@@ -727,14 +768,14 @@ class CreatureActions:
         for id in ids:
             creature = population[id]
             # if the creature doesnt have energy than deplete its fitness some
-            if creature["energy"] <= threshold_energy:
-                creature["fitness"] -= creature["fitness"] * fitness_depletion
+            if creature["energy"] <= population_parameters["threshold_energy"]:
+                creature["fitness"] -= creature["fitness"] * population_parameters["fitness_depletion"]
                 population[id] = creature
 
             # if the creature doesnt have fitness kill it
-            if creature["fitness"] <= threshold_fitness:
+            if creature["fitness"] <= population_parameters["threshold_fitness"]:
                 del population[id]
-                new_grid[id] = OFF if id not in food_pot else plant_color_dict[food_pot[id]["species"]]
+                new_grid[id] = color_parameters["OFF"] if id not in food_pot else plant_color_dict[food_pot[id]["species"]]
 
     def update(self, grid):
         global hour
@@ -774,10 +815,10 @@ class Utils:
     def update_time(hour, day, year):
         hour += 1
         old_day = day
-        if hour % hours_per_day == 0:
+        if hour % time_parameters["hours_per_day"] == 0:
             day += 1
             hour = 0
-        if day != 0 and day % days_per_year == 0:
+        if day != 0 and day % time_parameters["days_per_year"] == 0:
             year += 1
             day = 0
 
@@ -859,11 +900,13 @@ class Utils:
 
         plt.title(
             f"Y:D:H: {year}:{day}:{hour} - World Resources: {world_resources:,} - Alive: {wolfe_pop_size + sheep_pop_size:,} - Death Count: {death_count:,}",
-            fontsize=14)
-        plt.suptitle(f"\n{wolfe_pop_size:,} Wolves     {sheep_pop_size:,} Sheep"
-                     f"\nFitness: {avg_wolfe_fitness:,.1f}   {avg_sheep_fitness:,.1f}"
-                     f"\nEnergy: {avg_wolfe_energy:,.1f}   {avg_sheep_energy:,.1f}"
-                     f"\nSpeed: {avg_wolfe_speed:,.1f}   {avg_sheep_speed:,.1f}", fontsize=11)
+            fontsize=12)
+            
+
+        plt.suptitle(f"\nSpecies    Count   Fitness   Energy   Speed"
+                     f"\nWolves    {wolfe_pop_size:,}   {avg_wolfe_fitness:,.1f}   {avg_wolfe_energy:,.1f}   {avg_wolfe_speed:,.1f}"
+                     f"\nSheep    {sheep_pop_size:,.1f}   {avg_sheep_fitness:,.1f}   {avg_sheep_energy:,.1f}   {avg_sheep_speed:,.1f}", 
+                     fontsize=10, x=.87, y=0.9)
 
         # print(random.choice(list(population.items())))
 
